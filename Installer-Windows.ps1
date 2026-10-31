@@ -40,9 +40,9 @@ $packages | Set-Content (Join-Path $session 'packages-avant.txt')
 if ($packages -contains 'package:com.mehdi.barcahome') {
     throw 'Barca Home existe deja : aucune mise a jour automatique pour proteger ses donnees.'
 }
-$home = Invoke-TVCommand -Arguments @('shell','cmd','package','resolve-activity','--brief','-a','android.intent.action.MAIN','-c','android.intent.category.HOME')
-$home | Set-Content (Join-Path $session 'accueil-avant.txt')
-$component = @($home | Where-Object { $_ -match '^[a-zA-Z0-9_.]+/[a-zA-Z0-9_.$]+$' })
+$previousHomeOutput = Invoke-TVCommand -Arguments @('shell','cmd','package','resolve-activity','--brief','-a','android.intent.action.MAIN','-c','android.intent.category.HOME')
+$previousHomeOutput | Set-Content (Join-Path $session 'accueil-avant.txt')
+$component = @($previousHomeOutput | Where-Object { $_ -match '^[a-zA-Z0-9_.]+/[a-zA-Z0-9_.$]+$' })
 if ($component.Count -ne 1 -or $component[0] -match 'ResolverActivity|ChooserActivity|com.mehdi.barcahome') {
     throw 'Accueil initial ambigu : envoyez accueil-avant.txt avant installation.'
 }
