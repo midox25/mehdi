@@ -54,39 +54,50 @@ public class HomeActivity extends Activity {
         header.addView(clock);
         page.addView(header);
 
-        LinearLayout hero = new LinearLayout(this);
-        hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setGravity(Gravity.CENTER_VERTICAL);
-        TextView title = text("Un air de\nBarcelona.", 44, 0xfffff3de);
+        TextView title = text("Le spectacle commence ici.", 26, 0xfffff3de);
         title.setTypeface(Typeface.create("serif", Typeface.NORMAL));
-        hero.addView(title);
-        TextView sub = text("La lumière, les courbes, votre maison.", 17, 0xffead9bd);
-        sub.setPadding(0, dp(14), 0, 0);
-        hero.addView(sub);
-        page.addView(hero, new LinearLayout.LayoutParams(-1, 0, 1));
+        title.setPadding(0, dp(6), 0, dp(2));
+        page.addView(title);
+        TextView subtitle = text("Votre Camp Nou · Choisissez votre application", 13, 0xffead9bd);
+        page.addView(subtitle);
 
-        LinearLayout row = new LinearLayout(this);
-        row.setClipChildren(false);
+        FrameLayout arena = new FrameLayout(this);
+        arena.setClipChildren(false);
+        StadiumView stadium = new StadiumView();
+        arena.addView(stadium, new FrameLayout.LayoutParams(-1, -1));
+        page.addView(arena, new LinearLayout.LayoutParams(-1, 0, 1));
         page.setClipChildren(false);
-        Button youtube = tile("▶   YouTube\nVidéos & historique", 0xff934c35,
+
+        LinearLayout apps = new LinearLayout(this);
+        apps.setGravity(Gravity.CENTER);
+        apps.setClipChildren(false);
+        LinearLayout youtube = appIcon("YouTube", true, stadium, 0,
             () -> launch("com.google.android.youtube.tv", "YouTube"));
-        Button live = tile("▣   Live TV\nVos chaînes en direct", 0xff245d62,
+        LinearLayout live = appIcon("Live TV", false, stadium, 1,
             () -> launch("com.mitv.livetv", "Live TV"));
-        LinearLayout.LayoutParams card = new LinearLayout.LayoutParams(dp(248), dp(108));
-        card.setMargins(0, dp(8), dp(20), dp(8));
-        row.addView(youtube, card);
-        LinearLayout.LayoutParams second = new LinearLayout.LayoutParams(dp(248), dp(108));
-        second.setMargins(0, dp(8), 0, dp(8));
-        row.addView(live, second);
-        page.addView(row);
+        youtube.setId(View.generateViewId()); live.setId(View.generateViewId());
+        youtube.setNextFocusLeftId(live.getId()); youtube.setNextFocusRightId(live.getId());
+        live.setNextFocusLeftId(youtube.getId()); live.setNextFocusRightId(youtube.getId());
+        LinearLayout.LayoutParams iconSpace = new LinearLayout.LayoutParams(dp(110), dp(98));
+        iconSpace.setMargins(dp(12), dp(8), dp(12), dp(8));
+        apps.addView(youtube, iconSpace);
+        LinearLayout.LayoutParams liveSpace = new LinearLayout.LayoutParams(dp(110), dp(98));
+        liveSpace.setMargins(dp(12), dp(8), dp(12), dp(8));
+        apps.addView(live, liveSpace);
+        FrameLayout.LayoutParams middle = new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER);
+        arena.addView(apps, middle);
 
         LinearLayout footer = new LinearLayout(this);
         footer.setGravity(Gravity.CENTER_VERTICAL);
-        TextView hint = text("← →  Explorer    ·    OK  Ouvrir    ·    Menu  Personnaliser", 12, 0xffead9bd);
+        TextView hint = text("← →  Changer d’application    ·    OK  Ouvrir    ·    ↓  Réglages", 12, 0xffead9bd);
         footer.addView(hint, new LinearLayout.LayoutParams(0, dp(54), 1));
         Button config = tile("Personnaliser", 0xff3d4136, this::options);
         config.setTextSize(14);
         footer.addView(config, new LinearLayout.LayoutParams(dp(174), dp(44)));
+        config.setId(View.generateViewId());
+        youtube.setNextFocusDownId(config.getId()); live.setNextFocusDownId(config.getId());
+        config.setNextFocusUpId(youtube.getId());
+        stadium.onSelection = index -> config.setNextFocusUpId(index == 0 ? youtube.getId() : live.getId());
         page.addView(footer);
         setContentView(frame);
         youtube.requestFocus();
@@ -98,6 +109,37 @@ public class HomeActivity extends Activity {
         t.setFontFeatureSettings("kern");
         return t;
     }
+    private LinearLayout appIcon(String label, boolean youtube, StadiumView stadium, int index, Runnable action) {
+        LinearLayout icon = new LinearLayout(this);
+        icon.setOrientation(LinearLayout.VERTICAL); icon.setGravity(Gravity.CENTER);
+        icon.setPadding(dp(8), dp(8), dp(8), dp(6));
+        icon.setFocusable(true); icon.setClickable(true);
+        icon.setContentDescription(label + ". Appuyez sur OK pour ouvrir.");
+        GradientDrawable normal = new GradientDrawable();
+        normal.setColor(0xee182c32); normal.setCornerRadius(dp(20)); normal.setStroke(dp(1),0x807fa492);
+        GradientDrawable focus = new GradientDrawable();
+        focus.setColor(0xff243f43); focus.setCornerRadius(dp(20)); focus.setStroke(dp(3),0xffffd795);
+        StateListDrawable background = new StateListDrawable();
+        background.addState(new int[]{android.R.attr.state_focused},focus);
+        background.addState(new int[]{},normal);
+        icon.setBackground(background);
+        ImageView mark = new ImageView(this);
+        mark.setImageDrawable(new AppMark(youtube));
+        mark.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        icon.addView(mark,new LinearLayout.LayoutParams(dp(54),dp(40)));
+        TextView name = text(label,17,Color.WHITE);
+        name.setGravity(Gravity.CENTER); name.setPadding(0,dp(5),0,0);
+        name.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        icon.addView(name);
+        icon.setOnFocusChangeListener((v,focused) -> {
+            v.animate().scaleX(focused ? 1.07f : 1f).scaleY(focused ? 1.07f : 1f)
+                .setDuration(120).setInterpolator(new DecelerateInterpolator()).start();
+            if (focused) stadium.select(index);
+        });
+        icon.setOnClickListener(v -> action.run());
+        return icon;
+    }
+
     private Button tile(String label, int color, Runnable action) {
         Button b = new Button(this);
         b.setText(label); b.setTextSize(21); b.setTextColor(Color.WHITE);
@@ -147,7 +189,7 @@ public class HomeActivity extends Activity {
                 } else if (which == 3) {
                     openSettings(Settings.ACTION_HOME_SETTINGS);
                 } else {
-                    message("Barça Home 1.1 · Barcelona\nSans publicité ni accès réseau.\nL’historique se consulte dans YouTube → Vous / Bibliothèque.\nAucune application système n’est désactivée par ce lanceur.");
+                    message("Barça Home 1.2 · Camp Nou\nSans publicité ni accès réseau.\nL’historique se consulte dans YouTube → Vous / Bibliothèque.\nAucune application système n’est désactivée par ce lanceur.");
                 }
             }).show();
     }
@@ -227,6 +269,87 @@ public class HomeActivity extends Activity {
         return super.onKeyUp(keyCode, event);
     }
     private int dp(float n) { return Math.round(n * getResources().getDisplayMetrics().density); }
+    /** Original lightweight pictograms; labels remain visible at all times. */
+    private class AppMark extends Drawable {
+        private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final boolean youtube;
+        AppMark(boolean youtube) { this.youtube = youtube; }
+        @Override public void draw(Canvas c) {
+            Rect b=getBounds(); int save=c.save(); c.translate(b.left,b.top); c.scale(b.width()/64f,b.height()/48f);
+            p.setStyle(Paint.Style.FILL);
+            if (youtube) {
+                p.setColor(0xffff0033); c.drawRoundRect(0,4,64,44,11,11,p);
+                Path play=new Path(); play.moveTo(26,14);play.lineTo(26,34);play.lineTo(44,24);play.close();
+                p.setColor(Color.WHITE);c.drawPath(play,p);
+            } else {
+                p.setColor(0xff78c9bd);c.drawRoundRect(1,3,63,41,8,8,p);
+                p.setColor(0xff173e45);c.drawRoundRect(6,8,58,36,4,4,p);
+                p.setColor(0xffffedc9);c.drawRect(22,44,42,47,p);
+                p.setStrokeWidth(2);c.drawLine(32,40,32,45,p);
+                p.setColor(0xff78c9bd);p.setStrokeWidth(2.5f);
+                c.drawLine(15,27,23,19,p);c.drawLine(23,19,32,27,p);c.drawLine(32,27,47,16,p);
+            }
+            c.restoreToCount(save);
+        }
+        @Override public void setAlpha(int a) { p.setAlpha(a); }
+        @Override public void setColorFilter(ColorFilter f) { p.setColorFilter(f); }
+        @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
+    }
+    /** Stylized Camp Nou bowl, painted once; no live rendering or scrolling effects. */
+    private class StadiumView extends View {
+        final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        int selected;
+        java.util.function.IntConsumer onSelection;
+        StadiumView() { super(HomeActivity.this); setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO); }
+        void select(int index) { selected=index; invalidate(); if(onSelection!=null)onSelection.accept(index); }
+        @Override protected void onDraw(Canvas c) {
+            float w=getWidth(),h=getHeight();
+            float bowlW=Math.min(w*.91f,h*2.65f),bowlH=h*.90f;
+            float left=(w-bowlW)/2,top=(h-bowlH)/2;
+            RectF outer=new RectF(left,top,left+bowlW,top+bowlH);
+            p.setStyle(Paint.Style.FILL);p.setColor(0x99071116);
+            c.drawOval(new RectF(left-dp(7),top+dp(6),left+bowlW+dp(7),top+bowlH+dp(12)),p);
+            int[] tierColors={0xffc6a775,0xff253b52,0xff773b4e,0xff243b56,0xff92404c,0xff2a4560};
+            for(int i=0;i<tierColors.length;i++) {
+                float insetX=bowlW*.028f*i,insetY=bowlH*.037f*i;
+                p.setColor(tierColors[i]);c.drawOval(new RectF(left+insetX,top+insetY,left+bowlW-insetX,top+bowlH-insetY),p);
+            }
+            p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(dp(.7f));p.setColor(0x70e4c9a0);
+            for(int i=1;i<5;i++) {
+                float ix=bowlW*.028f*i,iy=bowlH*.037f*i;
+                c.drawOval(new RectF(left+ix,top+iy,left+bowlW-ix,top+bowlH-iy),p);
+            }
+            // Aisles define the recognizable oval seating bowl.
+            for(int angle=0;angle<360;angle+=10) {
+                double rad=Math.toRadians(angle);
+                float x1=w/2+(float)Math.cos(rad)*bowlW*.475f;
+                float y1=h/2+(float)Math.sin(rad)*bowlH*.475f;
+                float x2=w/2+(float)Math.cos(rad)*bowlW*.325f;
+                float y2=h/2+(float)Math.sin(rad)*bowlH*.28f;
+                c.drawLine(x1,y1,x2,y2,p);
+            }
+            RectF field=new RectF(w/2-bowlW*.315f,h/2-bowlH*.255f,w/2+bowlW*.315f,h/2+bowlH*.255f);
+            p.setStyle(Paint.Style.FILL);p.setColor(0xff174d3e);c.drawRoundRect(field,dp(9),dp(9),p);
+            int save=c.save();c.clipRect(field);
+            p.setColor(0x284ca77a);
+            for(int stripe=0;stripe<12;stripe+=2) {
+                float x=field.left+field.width()*stripe/12;
+                c.drawRect(x,field.top,x+field.width()/12,field.bottom,p);
+            }
+            c.restoreToCount(save);
+            p.setStyle(Paint.Style.STROKE);p.setColor(0x99e8ebd6);p.setStrokeWidth(dp(1));
+            RectF lines=new RectF(field);lines.inset(dp(6),dp(6));
+            c.drawRect(lines,p);c.drawLine(w/2,lines.top,w/2,lines.bottom,p);
+            c.drawCircle(w/2,h/2,field.height()*.24f,p);
+            c.drawRect(lines.left, h/2-field.height()*.26f,lines.left+field.width()*.13f,h/2+field.height()*.26f,p);
+            c.drawRect(lines.right-field.width()*.13f,h/2-field.height()*.26f,lines.right,h/2+field.height()*.26f,p);
+            p.setStyle(Paint.Style.FILL);p.setColor(0xffffe0a7);p.setTextAlign(Paint.Align.CENTER);
+            p.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));p.setTextSize(dp(12));
+            c.drawText("C A M P   N O U",w/2,top+bowlH*.15f,p);
+            p.setTextSize(dp(10));p.setColor(0xffe8ceab);
+            c.drawText(selected==0?"YOUTUBE  ·  VIDÉOS & HISTORIQUE":"LIVE TV  ·  VOS CHAÎNES EN DIRECT",w/2,top+bowlH*.88f,p);
+        }
+    }
     /** Rounded asymmetric ceramic silhouette with a small trencadis mosaic. */
     private class CeramicTile extends Drawable {
         private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);

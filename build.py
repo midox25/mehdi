@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build with official Android SDK tools; no Gradle or third-party libraries."""
-import os, pathlib, subprocess, zipfile, hashlib
+import os, pathlib, subprocess, zipfile, hashlib, shutil
 ROOT = pathlib.Path(__file__).resolve().parent
 SDK = pathlib.Path(os.environ.get('ANDROID_HOME', '/workspace/android-sdk'))
 PLATFORM = SDK / 'platforms' / 'android-35' / 'android.jar'
@@ -8,7 +8,8 @@ choices = [p for p in (SDK / 'build-tools').iterdir() if (p / 'aapt2').exists()]
 TOOLS = sorted(choices)[-1]
 OUT = ROOT / 'build'
 OUT.mkdir(exist_ok=True)
-(OUT / 'classes').mkdir(exist_ok=True)
+shutil.rmtree(OUT / 'classes', ignore_errors=True)
+(OUT / 'classes').mkdir()
 def run(*args):
     subprocess.run([str(x) for x in args], cwd=ROOT, check=True)
 run(TOOLS/'aapt2','compile','--dir',ROOT/'res','-o',OUT/'resources.zip')
