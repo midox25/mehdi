@@ -4,6 +4,12 @@
 
 Première version compilée et signée ; essai physique sur TV encore nécessaire.
 
+## Version Barcelona 1.1
+
+**[Télécharger la mise à jour Barcelona](https://github.com/midox25/mehdi/raw/refs/heads/main/downloads/BarcaHome-Barcelona-v1.1.zip)** · [Guide de mise à jour et annulation](BARCELONA.md)
+
+Courbes inspirées de Gaudí, mosaïque discrète, tons terre cuite et photo personnelle choisie depuis Windows. Pour une TV où Barça Home est déjà installé, utiliser `Mettre-a-jour-Barcelona.ps1`, qui sauvegarde la version précédente avant remplacement.
+
 Lanceur local conçu pour MiTV-MOSR4 / Android 11. Deux tuiles : YouTube et Live TV, un bouton Personnaliser, une horloge, navigation au pavé directionnel, bordure de focus visible et transitions de 120 ms. Aucun accès réseau, compte, publicité, télémétrie ou modification des autres applications.
 
 Le fond par défaut est une illustration abstraite. Une photo personnelle de Barcelone peut être importée ; aucune photo ni marque du FC Barcelone n'est fournie. L'historique privé reste dans YouTube → Vous / Bibliothèque → Historique. Le lanceur ne peut pas extraire cet historique ni assurer une lecture automatique ou contourner l'écran de sélection du profil.

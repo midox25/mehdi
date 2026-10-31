@@ -17,3 +17,12 @@ Non effectué :
 - Changement de l'accueil par défaut.
 
 L'application est une première version de développement signée. Le guide décrit l'essai physique et l'annulation. Ne pas désactiver l'accueil Xiaomi pour la tester. La clé de développement est conservée hors du dépôt et du paquet livré.
+
+## Barcelona 1.1
+
+- Compilation, signature v2/v3 et alignement vérifiés ; certificat identique à la version 1.0.
+- versionName 1.1, versionCode 1 pour la réinstallation réversible de développement.
+- Aucune permission demandée dans le manifeste compilé.
+- Scripts Windows analysés avec le parseur officiel PowerShell 7.5.4 ; aucune erreur de syntaxe ni affectation à HOME/PID/Host.
+- Mise à jour et script d’annulation exécutés dans PowerShell avec ADB et sélecteur de fichier simulés : sauvegarde et annulation présentes avant installation.
+- La photo réelle et l’affichage 1.1 n’ont pas été testés sur la TV. Le sélecteur Windows réel n’a pas été exécuté.

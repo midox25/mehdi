@@ -48,7 +48,7 @@ public class HomeActivity extends Activity {
 
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        TextView brand = text("B A R Ç A  /  H O M E", 16, 0xffe7c58b);
+        TextView brand = text("B A R C E L O N A   /   C A S A", 15, 0xfff1d3a2);
         header.addView(brand, new LinearLayout.LayoutParams(0, dp(42), 1));
         clock = text("", 24, Color.WHITE);
         header.addView(clock);
@@ -57,8 +57,10 @@ public class HomeActivity extends Activity {
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
         hero.setGravity(Gravity.CENTER_VERTICAL);
-        hero.addView(text("Votre salon.\nTout simplement.", 42, Color.WHITE));
-        TextView sub = text("Vos vidéos et vos chaînes, à portée de télécommande.", 17, 0xffc1cad9);
+        TextView title = text("Un air de\nBarcelona.", 44, 0xfffff3de);
+        title.setTypeface(Typeface.create("serif", Typeface.NORMAL));
+        hero.addView(title);
+        TextView sub = text("La lumière, les courbes, votre maison.", 17, 0xffead9bd);
         sub.setPadding(0, dp(14), 0, 0);
         hero.addView(sub);
         page.addView(hero, new LinearLayout.LayoutParams(-1, 0, 1));
@@ -66,23 +68,23 @@ public class HomeActivity extends Activity {
         LinearLayout row = new LinearLayout(this);
         row.setClipChildren(false);
         page.setClipChildren(false);
-        Button youtube = tile("▶   YouTube\nVidéos & historique", 0xffbb263d,
+        Button youtube = tile("▶   YouTube\nVidéos & historique", 0xff934c35,
             () -> launch("com.google.android.youtube.tv", "YouTube"));
-        Button live = tile("▣   Live TV\nVos chaînes en direct", 0xff254e75,
+        Button live = tile("▣   Live TV\nVos chaînes en direct", 0xff245d62,
             () -> launch("com.mitv.livetv", "Live TV"));
-        LinearLayout.LayoutParams card = new LinearLayout.LayoutParams(0, dp(102), 1);
+        LinearLayout.LayoutParams card = new LinearLayout.LayoutParams(dp(248), dp(108));
         card.setMargins(0, dp(8), dp(20), dp(8));
         row.addView(youtube, card);
-        LinearLayout.LayoutParams second = new LinearLayout.LayoutParams(0, dp(102), 1);
+        LinearLayout.LayoutParams second = new LinearLayout.LayoutParams(dp(248), dp(108));
         second.setMargins(0, dp(8), 0, dp(8));
         row.addView(live, second);
         page.addView(row);
 
         LinearLayout footer = new LinearLayout(this);
         footer.setGravity(Gravity.CENTER_VERTICAL);
-        TextView hint = text("Flèches pour naviguer · OK pour ouvrir", 13, 0xffc1cad9);
+        TextView hint = text("← →  Explorer    ·    OK  Ouvrir    ·    Menu  Personnaliser", 12, 0xffead9bd);
         footer.addView(hint, new LinearLayout.LayoutParams(0, dp(54), 1));
-        Button config = tile("Personnaliser", 0xff17273e, this::options);
+        Button config = tile("Personnaliser", 0xff3d4136, this::options);
         config.setTextSize(14);
         footer.addView(config, new LinearLayout.LayoutParams(dp(174), dp(44)));
         page.addView(footer);
@@ -102,16 +104,7 @@ public class HomeActivity extends Activity {
         b.setAllCaps(false); b.setGravity(Gravity.CENTER);
         b.setPadding(dp(12), dp(6), dp(12), dp(6));
         b.setFocusable(true); b.setStateListAnimator(null);
-        GradientDrawable idle = new GradientDrawable();
-        idle.setColor(color); idle.setCornerRadius(dp(16));
-        idle.setStroke(dp(1), 0x446d829c);
-        GradientDrawable focused = new GradientDrawable();
-        focused.setColor(color); focused.setCornerRadius(dp(16));
-        focused.setStroke(dp(3), 0xfff1d39c);
-        StateListDrawable states = new StateListDrawable();
-        states.addState(new int[]{android.R.attr.state_focused}, focused);
-        states.addState(new int[]{}, idle);
-        b.setBackground(states);
+        b.setBackground(new CeramicTile(color));
         b.setOnFocusChangeListener((v, focus) -> v.animate()
             .scaleX(focus ? 1.025f : 1f).scaleY(focus ? 1.025f : 1f)
             .setDuration(120).setInterpolator(new DecelerateInterpolator()).start());
@@ -154,7 +147,7 @@ public class HomeActivity extends Activity {
                 } else if (which == 3) {
                     openSettings(Settings.ACTION_HOME_SETTINGS);
                 } else {
-                    message("Barça Home 1.0\nSans publicité ni accès réseau.\nL’historique se consulte dans YouTube → Vous / Bibliothèque.\nAucune application système n’est désactivée par ce lanceur.");
+                    message("Barça Home 1.1 · Barcelona\nSans publicité ni accès réseau.\nL’historique se consulte dans YouTube → Vous / Bibliothèque.\nAucune application système n’est désactivée par ce lanceur.");
                 }
             }).show();
     }
@@ -190,7 +183,7 @@ public class HomeActivity extends Activity {
             check.recycle();
             File dest = new File(getFilesDir(), "background.jpg");
             if (!temp.renameTo(dest)) { temp.delete(); handler.post(() -> message("Enregistrement impossible.")); return; }
-            // A selected photo takes precedence over an ADB-supplied photo.
+            // The most recently saved photo takes precedence.
             getPreferences(0).edit().putBoolean("useInternal", true).apply();
             handler.post(this::loadPhoto);
         });
@@ -209,8 +202,8 @@ public class HomeActivity extends Activity {
     private void loadPhoto() {
         File internal = new File(getFilesDir(), "background.jpg");
         File external = externalPhoto();
-        File chosen = (getPreferences(0).getBoolean("useInternal", false) && internal.exists()) ? internal :
-            (external != null && external.exists() ? external : internal);
+        File chosen = external != null && external.exists() &&
+            (!internal.exists() || external.lastModified() > internal.lastModified()) ? external : internal;
         if (!chosen.exists()) return;
         long modified = chosen.lastModified();
         if (chosen.equals(loadedFile) && modified == loadedTime) return;
@@ -234,32 +227,82 @@ public class HomeActivity extends Activity {
         return super.onKeyUp(keyCode, event);
     }
     private int dp(float n) { return Math.round(n * getResources().getDisplayMetrics().density); }
+    /** Rounded asymmetric ceramic silhouette with a small trencadis mosaic. */
+    private class CeramicTile extends Drawable {
+        private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path shape = new Path();
+        private final int color;
+        CeramicTile(int color) { this.color = color; }
+        @Override public boolean isStateful() { return true; }
+        @Override protected boolean onStateChange(int[] state) { invalidateSelf(); return true; }
+        @Override public void draw(Canvas c) {
+            Rect r = getBounds(); float w = r.width(), h = r.height(), inset = dp(3);
+            shape.reset();
+            boolean compact = h < dp(70);
+            if (compact) {
+                shape.addRoundRect(new RectF(inset,inset,w-inset,h-inset),dp(18),dp(18),Path.Direction.CW);
+            } else {
+            shape.moveTo(inset + dp(26), inset + dp(3));
+            shape.cubicTo(w*.45f, inset + dp(8), w*.69f, inset, w-dp(29), inset);
+            shape.quadTo(w-inset, inset, w-inset, dp(31));
+            shape.lineTo(w-inset, h-dp(26));
+            shape.quadTo(w-inset, h-inset, w-dp(33), h-inset);
+            shape.cubicTo(w*.65f,h-dp(9),w*.33f,h-inset,dp(27),h-inset);
+            shape.quadTo(inset,h-inset,inset,h-dp(28));
+            shape.lineTo(inset,dp(31));
+            shape.quadTo(inset,inset,dp(29),inset+dp(3)); shape.close();
+            }
+            boolean focused = false;
+            for (int state : getState()) if (state == android.R.attr.state_focused) focused = true;
+            p.setStyle(Paint.Style.FILL); p.setColor(color); c.drawPath(shape,p);
+            int save = c.save(); c.clipPath(shape);
+            int[] colors = {0x807fb3a7,0x80eacb93,0x80bd6d47,0x806c989c};
+            for (int i=0; !compact && i<9; i++) {
+                float x=w-dp(48)+(i%3)*dp(14), y=dp(9)+(i/3)*dp(14);
+                Path chip = new Path(); chip.moveTo(x,y); chip.lineTo(x+dp(11),y+dp(2));
+                chip.lineTo(x+dp(8),y+dp(12)); chip.lineTo(x-dp(2),y+dp(9)); chip.close();
+                p.setColor(colors[i%4]); c.drawPath(chip,p);
+            }
+            c.restoreToCount(save);
+            p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(dp(focused ? 2.5f : 1));
+            p.setColor(focused ? 0xffffd795 : 0x70ead9bd); c.drawPath(shape,p);
+            p.setStyle(Paint.Style.FILL);
+        }
+        @Override public void setAlpha(int alpha) { p.setAlpha(alpha); }
+        @Override public void setColorFilter(ColorFilter f) { p.setColorFilter(f); }
+        @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
+    }
     private class Backdrop extends View {
-        Bitmap photo; final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        Bitmap photo;
+        final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        final Path wave = new Path();
         Backdrop() { super(HomeActivity.this); }
         @Override protected void onDraw(Canvas c) {
             float w = getWidth(), h = getHeight();
-            paint.setShader(new LinearGradient(0,0,w,h,new int[]{0xff091c35,0xff183c59,0xff6c344f},null,Shader.TileMode.CLAMP));
+            paint.setShader(new LinearGradient(0,0,w,h,new int[]{0xff213c42,0xff517b79,0xffaa7357},null,Shader.TileMode.CLAMP));
             c.drawRect(0,0,w,h,paint); paint.setShader(null);
             if (photo != null) {
                 float scale = Math.max(w/photo.getWidth(), h/photo.getHeight());
                 float bw = photo.getWidth()*scale, bh = photo.getHeight()*scale;
                 c.drawBitmap(photo,null,new RectF((w-bw)/2,(h-bh)/2,(w+bw)/2,(h+bh)/2),paint);
             } else {
-                // Quiet architectural silhouette, not a photograph.
-                paint.setColor(0x243d7990);
-                for (int i=0;i<18;i++) {
-                    float x=w*.49f+i*w*.032f;
-                    float top=h*(.40f+(i%4)*.055f);
-                    c.drawRect(x,top,x+w*.025f,h,paint);
+                // Architectural fallback; a personal photo is supplied locally.
+                paint.setColor(0x488dc3b0);
+                for (int i=0;i<5;i++) {
+                    float x=w*(.62f+i*.055f), top=h*(.16f+Math.abs(2-i)*.065f);
+                    wave.reset(); wave.moveTo(x,h*.86f); wave.lineTo(x+dp(7),top+dp(29));
+                    wave.quadTo(x+dp(15),top-dp(26),x+dp(23),top+dp(29));
+                    wave.lineTo(x+dp(33),h*.86f); wave.close(); c.drawPath(wave,paint);
                 }
-                paint.setColor(0x33d5a16d);
-                c.drawCircle(w*.81f,h*.25f,h*.075f,paint);
             }
-            paint.setShader(new LinearGradient(0,0,w,0,new int[]{0xe6091426,0x92091426,0x40091426},null,Shader.TileMode.CLAMP));
+            paint.setShader(new LinearGradient(0,0,w*.87f,0,new int[]{0xe51c2523,0x991c2523,0x081c2523},new float[]{0,.48f,1},Shader.TileMode.CLAMP));
             c.drawRect(0,0,w,h,paint);
-            paint.setShader(new LinearGradient(0,h*.4f,0,h,new int[]{0x00091426,0xe6091426},null,Shader.TileMode.CLAMP));
+            paint.setShader(new LinearGradient(0,h*.40f,0,h,new int[]{0x001c2523,0xd91c2523},null,Shader.TileMode.CLAMP));
             c.drawRect(0,0,w,h,paint); paint.setShader(null);
+            // Low-cost static wave inspired by the city's organic facades.
+            wave.reset(); wave.moveTo(w*.60f,h); wave.cubicTo(w*.77f,h*.81f,w*.86f,h*1.01f,w,h*.78f);
+            paint.setStyle(Paint.Style.STROKE); paint.setStrokeWidth(dp(1)); paint.setColor(0x70e8ca93);
+            c.drawPath(wave,paint); paint.setStyle(Paint.Style.FILL);
         }
     }
 }
