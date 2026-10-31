@@ -16,6 +16,7 @@ import android.widget.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.text.Collator;
+import org.json.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -27,9 +28,12 @@ public class HomeActivity extends Activity {
     private TextView clock, heroTitle, heroDescription, heroSource, appCount;
     private ImageView heroIcon;
     private Button heroOpen, homeNav, liveNav, appsNav;
-    private LinearLayout quickRow, appRow;
+    private LinearLayout videoRow, appRow;
+    private TextView videoLabel;
+    private HorizontalScrollView videoScroll;
+    private VideoSuggestion selectedVideo;
     private ScrollView contentScroll;
-    private View firstApp, firstQuick;
+    private View firstApp, firstVideo;
     private Backdrop backdrop;
     private File loadedFile;
     private long loadedTime = -1;
@@ -39,7 +43,8 @@ public class HomeActivity extends Activity {
     private List<AppEntry> catalog = new ArrayList<>();
     private final Runnable tick = new Runnable() {
         public void run() {
-            clock.setText(new SimpleDateFormat("HH:mm", Locale.FRANCE).format(new Date()));
+            clock.setText(ClockDisplay.format(System.currentTimeMillis(), TimeZone.getDefault(),
+                getPreferences(0).getInt("clockOffsetMinutes", -60)));
             handler.postDelayed(this, 15000);
         }
     };
@@ -112,17 +117,17 @@ public class HomeActivity extends Activity {
         heroDescription=text("Recherche des applications disponibles…",15,0xffe0d6ee);
         heroDescription.setMaxLines(2);heroDescription.setEllipsize(TextUtils.TruncateAt.END);
         hero.addView(heroDescription);
-        heroOpen=nav("Ouvrir",() -> {AppEntry app=findApp(selectedPackage);if(app!=null)openApp(app);});
+        heroOpen=nav("Ouvrir",() -> {if(selectedVideo!=null){openVideo(selectedVideo);return;}AppEntry app=findApp(selectedPackage);if(app!=null)openApp(app);});
         heroOpen.setEnabled(false);heroOpen.setVisibility(View.INVISIBLE);
         LinearLayout.LayoutParams openSpace=new LinearLayout.LayoutParams(dp(130),dp(36));
         openSpace.setMargins(0,dp(12),0,0);hero.addView(heroOpen,openSpace);
         content.addView(hero,new LinearLayout.LayoutParams(-1,dp(heroHeight)));
 
-        TextView quickLabel=text("À portée de télécommande",14,0xffe7dcf7);
-        content.addView(quickLabel,new LinearLayout.LayoutParams(-1,dp(24)));
-        HorizontalScrollView quickScroll=horizontal();quickRow=new LinearLayout(this);
-        quickRow.setClipChildren(false);quickScroll.addView(quickRow);
-        content.addView(quickScroll,new LinearLayout.LayoutParams(-1,dp(103)));
+        videoLabel=text("Vidéos à découvrir · sélection locale",14,0xffe7dcf7);
+        content.addView(videoLabel,new LinearLayout.LayoutParams(-1,dp(24)));
+        videoScroll=horizontal();videoRow=new LinearLayout(this);
+        videoRow.setClipChildren(false);videoScroll.addView(videoRow);
+        content.addView(videoScroll,new LinearLayout.LayoutParams(-1,dp(147)));
         appCount=text("Vos applications",14,0xffe7dcf7);
         appCount.setPadding(0,dp(8),0,0);
         content.addView(appCount,new LinearLayout.LayoutParams(-1,dp(30)));
@@ -211,16 +216,13 @@ public class HomeActivity extends Activity {
         StringBuilder signature=new StringBuilder();for(AppEntry app:result)signature.append(app.pkg).append('|').append(app.label).append(';');
         catalog=result;liveNav.setVisibility(findApp("com.mitv.livetv")==null?View.GONE:View.VISIBLE);
         if(signature.toString().equals(catalogSignature) && !initialFocus)return;
-        catalogSignature=signature.toString();quickRow.removeAllViews();appRow.removeAllViews();firstApp=null;firstQuick=null;
+        catalogSignature=signature.toString();appRow.removeAllViews();firstApp=null;
         appCount.setText("Vos applications · "+result.size());
         for(int i=0;i<result.size();i++) {
             AppEntry app=result.get(i);
             LinearLayout circle=appCircle(app);LinearLayout.LayoutParams slot=new LinearLayout.LayoutParams(dp(94),dp(104));
             slot.setMargins(0,dp(4),dp(12),0);appRow.addView(circle,slot);if(firstApp==null)firstApp=circle;
-            if(i<4) {
-                LinearLayout card=quickCard(app,i);LinearLayout.LayoutParams cardSpace=new LinearLayout.LayoutParams(dp(202),dp(86));
-                cardSpace.setMargins(0,dp(6),dp(16),dp(6));quickRow.addView(card,cardSpace);if(firstQuick==null)firstQuick=card;
-            }
+
         }
         if(result.isEmpty()) {
             heroSource.setText("VOTRE MI TV");heroIcon.setImageDrawable(null);heroTitle.setText("Votre écran vous attend.");
@@ -228,12 +230,14 @@ public class HomeActivity extends Activity {
             heroOpen.setEnabled(false);heroOpen.setVisibility(View.INVISIBLE);
         } else {
             AppEntry selected=findApp(selectedPackage);showHero(selected==null?result.get(0):selected);
-            if(firstQuick!=null)heroOpen.setNextFocusDownId(firstQuick.getId());
+            if(firstApp!=null)heroOpen.setNextFocusDownId(firstApp.getId());
             if(firstApp!=null)appsNav.setNextFocusDownId(firstApp.getId());
         }
+        renderVideos();
         if(initialFocus){initialFocus=false;homeNav.requestFocus();}
     }
     private void showHero(AppEntry app) {
+        selectedVideo=null;heroOpen.setText("Ouvrir");
         selectedPackage=app.pkg;heroSource.setText("  "+app.label);heroIcon.setImageDrawable(copyIcon(app));
         heroTitle.setText(app.label);
         heroDescription.setText(app.pkg.equals("com.google.android.youtube.tv")?"Vos vidéos, vos abonnements et votre historique dans YouTube.":
@@ -242,21 +246,6 @@ public class HomeActivity extends Activity {
     }
     private Drawable copyIcon(AppEntry app) {
         Drawable.ConstantState state=app.icon.getConstantState();return state==null?app.icon:state.newDrawable(getResources()).mutate();
-    }
-    private LinearLayout quickCard(AppEntry app,int index) {
-        LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.HORIZONTAL);card.setGravity(Gravity.CENTER_VERTICAL);
-        card.setPadding(dp(14),dp(10),dp(12),dp(10));card.setId(View.generateViewId());card.setFocusable(true);card.setClickable(true);
-        int[][] colors={{0xff683366,0xff28204e},{0xff21647a,0xff20284b},{0xff624f86,0xff29203f},{0xff695343,0xff352147}};
-        GradientDrawable base=new GradientDrawable(GradientDrawable.Orientation.TL_BR,colors[index%4]);base.setCornerRadius(dp(16));
-        GradientDrawable focus=new GradientDrawable(GradientDrawable.Orientation.TL_BR,colors[index%4]);focus.setCornerRadius(dp(16));focus.setStroke(dp(3),0xffeee4ff);
-        StateListDrawable bg=new StateListDrawable();bg.addState(new int[]{android.R.attr.state_focused},focus);bg.addState(new int[]{},base);card.setBackground(bg);
-        ImageView icon=new ImageView(this);icon.setImageDrawable(copyIcon(app));icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        card.addView(icon,new LinearLayout.LayoutParams(dp(48),dp(48)));
-        TextView label=text(app.label,17,Color.WHITE);label.setMaxLines(2);label.setEllipsize(TextUtils.TruncateAt.END);label.setPadding(dp(10),0,0,0);
-        card.addView(label,new LinearLayout.LayoutParams(0,-2,1));
-        card.setContentDescription(app.label+". Appuyez sur OK pour ouvrir.");
-        card.setOnFocusChangeListener((v,focusState)->{animateFocus(v,focusState,1.035f);if(focusState){showHero(app);selectTab(0);}});
-        card.setOnClickListener(v->openApp(app));return card;
     }
     private LinearLayout appCircle(AppEntry app) {
         LinearLayout tile=new LinearLayout(this);tile.setOrientation(LinearLayout.VERTICAL);tile.setGravity(Gravity.TOP|Gravity.CENTER_HORIZONTAL);
@@ -296,8 +285,134 @@ public class HomeActivity extends Activity {
         list.setOnItemClickListener((p,v,position,id)->{AppEntry chosen=matches.get(position);dialog.dismiss();openApp(chosen);});
         dialog.show();
     }
+    private List<VideoSuggestion> loadVideos() {
+        String raw=getPreferences(0).getString("videoSuggestions",null);
+        if(raw==null)return VideoSuggestion.defaults();
+        try {
+            JSONArray array=new JSONArray(raw);List<VideoSuggestion> videos=new ArrayList<>();Set<String> ids=new HashSet<>();
+            for(int i=0;i<array.length() && videos.size()<12;i++){
+                JSONObject object=array.optJSONObject(i);if(object==null)continue;
+                try{VideoSuggestion v=new VideoSuggestion(object.optString("title"),object.optString("id"));
+                    if(ids.add(v.id))videos.add(v);
+                }catch(IllegalArgumentException ignored){}
+            }
+            return videos;
+        }catch(JSONException e){return VideoSuggestion.defaults();}
+    }
+    private String encodeVideos(List<VideoSuggestion> videos) {
+        JSONArray array=new JSONArray();
+        for(VideoSuggestion v:videos){try{JSONObject o=new JSONObject();o.put("title",v.title);o.put("id",v.id);array.put(o);}catch(JSONException ignored){}}
+        return array.toString();
+    }
+    private void saveVideos(List<VideoSuggestion> videos) {
+        getPreferences(0).edit().putString("videoSuggestionsPrevious",encodeVideos(loadVideos()))
+            .putString("videoSuggestions",encodeVideos(videos)).apply();renderVideos();
+    }
+    private void renderVideos() {
+        videoRow.removeAllViews();firstVideo=null;
+        AppEntry youtube=findApp("com.google.android.youtube.tv");
+        videoLabel.setVisibility(youtube==null?View.GONE:View.VISIBLE);videoScroll.setVisibility(youtube==null?View.GONE:View.VISIBLE);
+        if(youtube==null){selectedVideo=null;return;}
+        if(selectedVideo!=null)showHero(youtube);
+        List<VideoSuggestion> videos=loadVideos();
+        for(int i=0;i<videos.size();i++){
+            View card=videoCard(videos.get(i),i);
+            LinearLayout.LayoutParams space=new LinearLayout.LayoutParams(dp(218),dp(132));space.setMargins(0,dp(5),dp(16),dp(6));
+            videoRow.addView(card,space);if(firstVideo==null)firstVideo=card;
+        }
+        Button add=nav("+ Ajouter\nune vidéo",()->editVideo(-1,null));add.setTextSize(14);
+        LinearLayout.LayoutParams addSpace=new LinearLayout.LayoutParams(dp(130),dp(108));addSpace.setMargins(0,dp(16),dp(8),0);
+        videoRow.addView(add,addSpace);if(firstVideo==null)firstVideo=add;
+        heroOpen.setNextFocusDownId(firstVideo.getId());
+    }
+    private LinearLayout videoCard(VideoSuggestion video,int index) {
+        LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setId(View.generateViewId());
+        card.setFocusable(true);card.setClickable(true);card.setPadding(dp(4),dp(4),dp(4),dp(4));
+        StateListDrawable bg=new StateListDrawable();
+        bg.addState(new int[]{android.R.attr.state_focused},rounded(0xff342747,14,0xffefe4ff,2));
+        bg.addState(new int[]{},rounded(0xee211a34,14,0,0));card.setBackground(bg);
+        ImageView cover=new ImageView(this);cover.setImageDrawable(new VideoCover(index));
+        card.addView(cover,new LinearLayout.LayoutParams(-1,dp(80)));
+        TextView title=text(video.title,14,Color.WHITE);title.setMaxLines(2);title.setEllipsize(TextUtils.TruncateAt.END);
+        title.setPadding(dp(6),dp(4),dp(6),0);card.addView(title,new LinearLayout.LayoutParams(-1,0,1));
+        card.setContentDescription(video.title+". Vidéo YouTube. OK pour regarder.");
+        card.setOnFocusChangeListener((v,focused)->{
+            animateFocus(v,focused,1.035f);if(focused)showVideoHero(video);
+        });
+        card.setOnClickListener(v->openVideo(video));return card;
+    }
+    private void showVideoHero(VideoSuggestion video){
+        selectedVideo=video;selectedPackage="com.google.android.youtube.tv";selectTab(0);
+        AppEntry youtube=findApp(selectedPackage);heroIcon.setImageDrawable(youtube==null?null:copyIcon(youtube));
+        heroSource.setText("  YouTube · Découverte");heroTitle.setText(video.title);
+        heroDescription.setText("Sélection locale · Regardez cette vidéo dans YouTube.");
+        heroOpen.setText("Regarder");heroOpen.setEnabled(youtube!=null);heroOpen.setVisibility(View.VISIBLE);
+        heroOpen.setContentDescription("Regarder "+video.title);
+    }
+    private void openVideo(VideoSuggestion video){
+        if(findApp("com.google.android.youtube.tv")==null){message("YouTube n’est pas disponible.");return;}
+        Intent intent=new Intent(Intent.ACTION_VIEW,Uri.parse(video.url())).setPackage("com.google.android.youtube.tv")
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try{startActivity(intent);}catch(ActivityNotFoundException | SecurityException e){
+            message("YouTube ne peut pas ouvrir ce lien sur cette TV. Ouvrez YouTube et recherchez : "+video.title);
+        }
+    }
+    private void videoManager(){
+        List<VideoSuggestion> videos=loadVideos();List<String> choices=new ArrayList<>();
+        for(VideoSuggestion v:videos)choices.add(v.title);
+        choices.add("+ Ajouter une vidéo");choices.add("Annuler la dernière modification");choices.add("Rétablir la sélection de départ");
+        new AlertDialog.Builder(this).setTitle("Vidéos suggérées · sélection locale")
+            .setItems(choices.toArray(new String[0]),(d,which)->{
+                if(which<videos.size()){
+                    VideoSuggestion video=videos.get(which);
+                    new AlertDialog.Builder(this).setTitle(video.title).setItems(new String[]{"Modifier","Retirer"},(x,action)->{
+                        if(action==0)editVideo(which,video);
+                        else new AlertDialog.Builder(this).setMessage("Retirer cette vidéo de l’accueil ?")
+                            .setNegativeButton("Annuler",null).setPositiveButton("Retirer",(a,b)->{
+                                List<VideoSuggestion> updated=loadVideos();if(which<updated.size()){updated.remove(which);saveVideos(updated);}
+                            }).show();
+                    }).show();
+                }else if(which==videos.size())editVideo(-1,null);
+                else if(which==videos.size()+1){
+                    String previous=getPreferences(0).getString("videoSuggestionsPrevious",null);
+                    if(previous==null){message("Aucune modification à annuler.");return;}
+                    getPreferences(0).edit().putString("videoSuggestionsPrevious",encodeVideos(loadVideos()))
+                        .putString("videoSuggestions",previous).apply();renderVideos();
+                }else new AlertDialog.Builder(this).setMessage("Rétablir les deux vidéos de départ ? La dernière modification restera annulable.")
+                    .setNegativeButton("Annuler",null).setPositiveButton("Rétablir",(a,b)->saveVideos(VideoSuggestion.defaults())).show();
+            }).setNegativeButton("Fermer",null).show();
+    }
+    private void editVideo(int index,VideoSuggestion existing){
+        if(index<0 && loadVideos().size()>=12){message("12 vidéos maximum. Retirez-en une avant d’en ajouter.");return;}
+        LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.VERTICAL);fields.setPadding(dp(20),0,dp(20),0);
+        EditText title=new EditText(this);title.setHint("Titre de la vidéo");title.setSingleLine(true);
+        title.setFilters(new InputFilter[]{new InputFilter.LengthFilter(80)});fields.addView(title);
+        EditText link=new EditText(this);link.setHint("Lien YouTube HTTPS");link.setSingleLine(true);
+        link.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_URI);fields.addView(link);
+        if(existing!=null){title.setText(existing.title);link.setText(existing.url());}
+        AlertDialog dialog=new AlertDialog.Builder(this).setTitle(existing==null?"Ajouter une vidéo":"Modifier la vidéo")
+            .setView(fields).setNegativeButton("Annuler",null).setPositiveButton("Enregistrer",null).create();
+        dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+            String name=title.getText().toString().trim(),id=VideoSuggestion.parseId(link.getText().toString());
+            if(name.isEmpty()){title.setError("Indiquez un titre.");return;}
+            if(id==null){link.setError("Collez un lien youtube.com ou youtu.be valide.");return;}
+            List<VideoSuggestion> videos=loadVideos();
+            for(int i=0;i<videos.size();i++)if(i!=index && videos.get(i).id.equals(id)){link.setError("Cette vidéo figure déjà dans la liste.");return;}
+            VideoSuggestion suggestion=new VideoSuggestion(name,id);
+            if(index>=0 && index<videos.size())videos.set(index,suggestion);else videos.add(suggestion);
+            saveVideos(videos);dialog.dismiss();
+        }));dialog.show();
+    }
+    private void clockOptions(){
+        int offset=getPreferences(0).getInt("clockOffsetMinutes",-60);
+        new AlertDialog.Builder(this).setTitle("Horloge de cet accueil uniquement")
+            .setSingleChoiceItems(new String[]{"Heure TV moins 1 heure","Heure TV sans décalage"},offset==-60?0:1,(d,which)->{
+                getPreferences(0).edit().putInt("clockOffsetMinutes",which==0?-60:0).apply();
+                handler.removeCallbacks(tick);tick.run();d.dismiss();
+            }).setNegativeButton("Fermer",null).show();
+    }
     private void options() {
-        String[] items = {"Choisir une photo", "Retirer la photo", "Réglages de la TV", "Choisir l’accueil par défaut", "À propos"};
+        String[] items = {"Choisir une photo", "Retirer la photo", "Vidéos suggérées", "Décalage de l’horloge", "Réglages de la TV", "Choisir l’accueil par défaut", "À propos"};
         new AlertDialog.Builder(this).setTitle("Votre accueil")
             .setItems(items, (d, which) -> {
                 if (which == 0) {
@@ -321,11 +436,15 @@ public class HomeActivity extends Activity {
                             backdrop.photo = null; backdrop.invalidate();
                         }).show();
                 } else if (which == 2) {
-                    openSettings(Settings.ACTION_SETTINGS);
+                    videoManager();
                 } else if (which == 3) {
+                    clockOptions();
+                } else if (which == 4) {
+                    openSettings(Settings.ACTION_SETTINGS);
+                } else if (which == 5) {
                     openSettings(Settings.ACTION_HOME_SETTINGS);
                 } else {
-                    message("Barça Home 1.3 · Mi TV Home\nSans publicité ni accès réseau.\nL’historique se consulte dans YouTube → Vous / Bibliothèque.\nAucune application système n’est désactivée par ce lanceur.");
+                    message("Barça Home 1.4 · Vidéos\nSans publicité ni accès réseau.\nVidéos : sélection locale modifiable, sans accès au compte.\nL’historique se consulte dans YouTube → Vous / Bibliothèque.\nAucune application système n’est désactivée par ce lanceur.");
                 }
             }).show();
     }
@@ -405,6 +524,24 @@ public class HomeActivity extends Activity {
         return super.onKeyUp(keyCode, event);
     }
     private int dp(float n) { return Math.round(n * getResources().getDisplayMetrics().density); }
+    /** Offline cover graphic; no thumbnails, watch history or network calls. */
+    private class VideoCover extends Drawable {
+        final Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);final int index;
+        VideoCover(int index){this.index=index;}
+        @Override public void draw(Canvas c){
+            Rect r=getBounds();float w=r.width(),h=r.height();int save=c.save();c.translate(r.left,r.top);
+            int[][] colors={{0xff2c6773,0xff16223c},{0xff7a4662,0xff241d45},{0xff70633d,0xff24224b}};
+            p.setShader(new LinearGradient(0,0,w,h,colors[index%3],null,Shader.TileMode.CLAMP));
+            c.drawRoundRect(0,0,w,h,dp(10),dp(10),p);p.setShader(null);
+            p.setColor(0x284dedb0);c.drawCircle(w*.82f,h*.28f,h*.6f,p);
+            p.setColor(0xfff50035);c.drawRoundRect(w/2-dp(23),h/2-dp(16),w/2+dp(23),h/2+dp(16),dp(9),dp(9),p);
+            Path play=new Path();play.moveTo(w/2-dp(5),h/2-dp(8));play.lineTo(w/2-dp(5),h/2+dp(8));play.lineTo(w/2+dp(9),h/2);play.close();
+            p.setColor(Color.WHITE);c.drawPath(play,p);c.restoreToCount(save);
+        }
+        @Override public void setAlpha(int a){p.setAlpha(a);}
+        @Override public void setColorFilter(ColorFilter f){p.setColorFilter(f);}
+        @Override public int getOpacity(){return PixelFormat.TRANSLUCENT;}
+    }
     private class NavMark extends Drawable {
         final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG);
         final boolean settings;

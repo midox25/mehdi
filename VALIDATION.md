@@ -42,3 +42,12 @@ L'application est une première version de développement signée. Le guide déc
 - Catalogue testé sur JVM : 8 contrôles couvrent les applications désactivées/suspendues/non exportées, les outils internes et lanceurs, le regroupement, la préférence TV indépendamment de l'ordre, le tri, le catalogue vide et l'apparition d'une nouvelle application.
 - Script PowerShell Mi TV analysé et exécuté avec ADB simulé : mise à jour, sauvegarde préalable, annulation et arrêt après échec d'installation vérifiés ; aucune commande modifiant la photo ni l'accueil par défaut.
 - L'affichage 1.3, la recherche, le focus réel, les icônes et l'interrogation du PackageManager de la Mi TV restent à vérifier sur appareil. Aucun test sur émulateur n'est déclaré.
+
+## Vidéos et horloge 1.4
+
+- 8 contrôles du catalogue et 18 contrôles des liens vidéo/horloge passent sur JVM (26 au total).
+- Liens YouTube canoniques et courts, liens malformés/autres domaines, préférences de protocole, ID, titres vides, décalage moins 60 minutes, passage de minuit et annulation du décalage testés.
+- Compilation Java/DEX, signature v2/v3, alignement et même certificat que 1.3 vérifiés.
+- Mise à jour et annulation PowerShell exécutées avec ADB simulé ; arrêt après échec d'installation vérifié.
+- Aucun réglage Android d'heure/fuseau, photo ni choix de lanceur n'est modifié par le script.
+- L'édition/persistance des suggestions Android, la navigation, le rendu et les liens YouTube sur la TV n'ont pas été exécutés sur appareil ou émulateur. Les titres par défaut ne sont pas un flux de recommandations personnalisé.
