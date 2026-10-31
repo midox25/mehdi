@@ -1,0 +1,13 @@
+Source: https://github.com/Gathin23/cleanyourtv
+Commit: 57c00a40dafe040b0be1f32086e96c05a1a37054
+Launcher package: com.gathin.tvhome
+Launcher version: 3.2 (code 11)
+Only upstream tracked modification: launcher/app/src/main/res/values/config.xml
+Changes: dock_apps = YouTube TV, com.mitv.livetv, com.mehdi.barcahome; live_tv_package = com.mitv.livetv.
+No upstream Java, tests, safety rules, dependency declarations or tools modified.
+Build: JDK 21, Android platform 34 extension 7 revision 3, build-tools 34.0.0, Gradle 8.9, AGP 8.5.2.
+Commands: sh gradlew --no-daemon --max-workers=2 -Dorg.gradle.jvmargs=-Xmx2g testReleaseUnitTest lintRelease assembleRelease
+SDK archives and Gradle wrapper verified against official published checksums. Wrapper verifies Gradle distribution SHA256.
+Upstream LICENSE: MIT, Gathin 2026. Outfit font: SIL OFL, see launcher/FONT-LICENSE-OFL.txt.
+AndroidX RecyclerView and DynamicAnimation dependencies: Apache License 2.0.
+APK locally built from upstream sources; not an official publisher-signed release. No TV state or private keys included.

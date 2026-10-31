@@ -52,3 +52,7 @@ Aucune bibliothèque tierce ni Gradle. La clé de développement reste hors du d
 Voir [VALIDATION.md](VALIDATION.md) pour les contrôles exécutés et leurs limites. La version 1.4 reste à tester sur une TV ; aucun émulateur n'a été utilisé.
 
 Versions précédentes : [Mi TV Home 1.3](MITV-HOME.md), [Camp Nou 1.2](CAMP-NOU.md), [Barcelona 1.1](BARCELONA.md).
+
+## Essai CleanYourTV et nettoyage limité
+
+[Guide et téléchargement séparé](integrations/cleanyourtv/README.md). Le lanceur de Gathin reste une application distincte ; notre accueil, ses vidéos et son décalage d'horloge sont conservés. L'essai ne désactive aucun ancien lanceur et le nettoyage utilise les outils officiels avec quatre paquets seulement, dans le périmètre déjà autorisé.

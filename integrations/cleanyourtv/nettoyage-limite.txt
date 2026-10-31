@@ -1,0 +1,8 @@
+# MiTV-MOSR4 : perimetre deja approuve, exclut lanceurs, TV/HDMI, fournisseurs,
+# reseau, Bluetooth, clavier, Play Services, voix/cast et mises a jour.
+# Les trois premiers etaient deja desactives lors du dernier controle.
+# CleanYourTV upstream 57c00a40 identifie fusion.android.tv.demo comme demo magasin.
+com.google.android.feedback
+com.miui.tv.analytics
+com.xiaomi.statistic
+fusion.android.tv.demo
