@@ -35,3 +35,10 @@ L'application est une première version de développement signée. Le guide déc
 - Script PowerShell Camp Nou analysé et exécuté avec un ADB simulé : sauvegarde et annulation avant installation, exécution de l'annulation, arrêt sur échec d'installation.
 - Les commandes simulées ne modifient ni la photo ni le choix d'accueil par défaut.
 - Navigation Android et rendu du stade non testés sur appareil/émulateur ; validation physique à effectuer par l'utilisateur.
+
+## Mi TV Home 1.3
+
+- Ressources, Java et DEX compilés après nettoyage des anciennes classes.
+- Catalogue testé sur JVM : 8 contrôles couvrent les applications désactivées/suspendues/non exportées, les outils internes et lanceurs, le regroupement, la préférence TV indépendamment de l'ordre, le tri, le catalogue vide et l'apparition d'une nouvelle application.
+- Script PowerShell Mi TV analysé et exécuté avec ADB simulé : mise à jour, sauvegarde préalable, annulation et arrêt après échec d'installation vérifiés ; aucune commande modifiant la photo ni l'accueil par défaut.
+- L'affichage 1.3, la recherche, le focus réel, les icônes et l'interrogation du PackageManager de la Mi TV restent à vérifier sur appareil. Aucun test sur émulateur n'est déclaré.

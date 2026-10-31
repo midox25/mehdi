@@ -1,74 +1,53 @@
-# Barça Home — Android TV
+# Barça Home — Mi TV Home 1.3
 
-**[Télécharger le paquet Windows (ZIP)](https://github.com/midox25/mehdi/raw/refs/heads/main/downloads/BarcaHome-Windows.zip)** · [APK seul](https://github.com/midox25/mehdi/raw/refs/heads/main/downloads/BarcaHome.apk)
+**[Télécharger le ZIP Windows](https://github.com/midox25/mehdi/raw/refs/heads/main/downloads/BarcaHome-MiTV-v1.3.zip)** · [Guide illustrant le fonctionnement et l'annulation](MITV-HOME.md) · [APK seul](https://github.com/midox25/mehdi/raw/refs/heads/main/downloads/BarcaHome.apk)
 
-Première version compilée et signée ; essai physique sur TV encore nécessaire.
+Accueil Android TV conçu pour MiTV-MOSR4 / Android 11. Présentation inspirée de la référence : barre arrondie Accueil / Direct / Apps, grand espace principal, cartes de raccourcis et rangée d'icônes circulaires. Seules les applications installées avec une activité de lancement disponible apparaissent. Aucun accès réseau, publicité, compte, service d'accessibilité ou permission d'administration.
 
-## Version Camp Nou 1.2 — actuelle
+## Mise à jour Windows
 
-**[Télécharger Camp Nou 1.2 pour Windows](https://github.com/midox25/mehdi/raw/refs/heads/main/downloads/BarcaHome-CampNou-v1.2.zip)** · [Guide de mise à jour et annulation](CAMP-NOU.md)
-
-YouTube et Live TV disposent de pictogrammes dédiés au milieu d'un stade ovale inspiré du Camp Nou. Gauche/droite change la sélection, OK ouvre l'application, Bas mène aux réglages. La photo reste conservée. Utiliser `Mettre-a-jour-CampNou.ps1` pour une TV où notre application est déjà installée.
-
-## Version Barcelona 1.1 — précédente
-
-**[Télécharger la mise à jour Barcelona](https://github.com/midox25/mehdi/raw/refs/heads/main/downloads/BarcaHome-Barcelona-v1.1.zip)** · [Guide de mise à jour et annulation](BARCELONA.md)
-
-Courbes inspirées de Gaudí, mosaïque discrète, tons terre cuite et photo personnelle choisie depuis Windows. Pour une TV où Barça Home est déjà installé, utiliser `Mettre-a-jour-Barcelona.ps1`, qui sauvegarde la version précédente avant remplacement.
-
-Lanceur local conçu pour MiTV-MOSR4 / Android 11. Deux icônes au centre du stade : YouTube et Live TV, un bouton Personnaliser, une horloge, navigation au pavé directionnel, bordure de focus visible et transitions de 120 ms. Aucun accès réseau, compte, publicité, télémétrie ou modification des autres applications.
-
-Le fond par défaut est une illustration abstraite. Une photo personnelle de Barcelone peut être importée ; aucune photo ni marque du FC Barcelone n'est fournie. L'historique privé reste dans YouTube → Vous / Bibliothèque → Historique. Le lanceur ne peut pas extraire cet historique ni assurer une lecture automatique ou contourner l'écran de sélection du profil.
-
-## Installation Windows, après essai
-
-Décompresser le paquet téléchargé dans un dossier. Garder `BarcaHome.apk`, `BarcaHome.apk.sha256` et `Installer-Windows.ps1` ensemble. Ouvrir PowerShell dans ce dossier. ADB doit déjà être connecté et autorisé sur la TV.
+Décompresser le ZIP dans un nouveau dossier, ouvrir PowerShell dans ce dossier puis :
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Installer-Windows.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Mettre-a-jour-MiTV.ps1
 ```
 
-Cette option de politique ne concerne que ce processus PowerShell. Le script vérifie l'empreinte de l'APK, sauvegarde l'inventaire et l'accueil actuel, prépare l'annulation puis installe et ouvre le lanceur pour essai. Il ne définit pas l'accueil par défaut et ne désactive pas Xiaomi. Si un accueil initial unique ne peut pas être identifié, il s'arrête. Il refuse de remplacer une installation existante. Les journaux logcat peuvent contenir des informations privées : les garder localement.
+ADB doit déjà être connecté et autorisé sur `10.114.7.230:5555`. Le script vérifie SHA256, sauvegarde l'APK existant, prépare l'annulation puis installe et ouvre l'application. La photo et l'accueil par défaut restent conservés. Le journal est horodaté et logcat est capturé uniquement pendant chaque commande. Les journaux peuvent contenir des informations personnelles : les conserver localement.
 
-Photo personnelle (JPG/PNG de préférence, paysage 1920×1080) :
+Pour une première installation de notre application, utiliser `Installer-Windows.ps1` à la place. Il sauvegarde l'accueil initial et ouvre l'application pour essai sans la définir comme accueil par défaut. La politique d'exécution indiquée ne concerne que ce processus PowerShell.
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\Installer-Windows.ps1 -Photo "$env:USERPROFILE\Pictures\barcelone.jpg"
-```
+## Applications et navigation
 
-Ou Personnaliser → Choisir une photo si la TV possède un sélecteur de documents. Le décodage s'effectue hors du fil d'interface, à résolution limitée. La photo est copiée dans les données de l'application, l'original reste intact. Le sélecteur n'applique pas les métadonnées de rotation EXIF : utiliser une image déjà orientée en paysage.
+Le catalogue combine les catégories MAIN/LEANBACK_LAUNCHER et MAIN/LAUNCHER. Les résultats sont filtrés : application et activité activées, activité exportée, application non suspendue, exclusion des lanceurs et outils internes identifiés. Les doublons sont regroupés par paquet avec préférence à l'activité TV. YouTube et Live TV sont prioritaires quand ils sont effectivement disponibles ; le reste est classé par nom. Aucune liste fictive d'applications ni d'affiches n'est utilisée.
 
-## Essai à effectuer sur la TV
+Les cartes sont des raccourcis d'applications, pas des recommandations de films. Les icônes sont celles des applications installées. La sélection met à jour la zone principale, OK ouvre l'application, la loupe recherche localement et la roue dentée/touche Menu ouvre la personnalisation. Le catalogue est actualisé au retour sur l'accueil. Les transitions de focus durent 120 ms ; le défilement est assuré par les vues Android natives.
 
-1. Vérifier que l'écran est entièrement visible et que YouTube reçoit le focus initial.
-2. Naviguer gauche/droite/bas/haut et vérifier la bordure de focus sans saccade.
-3. Ouvrir YouTube puis gérer soi-même profil/connexion ; revenir avec Accueil (qui ouvre encore l'accueil Xiaomi), puis rouvrir Barça Home depuis les applications.
-4. Tester Live TV : il ouvre uniquement `com.mitv.livetv`, jamais Xiaomi TV+. Si indisponible, le lanceur affiche un message et ne réactive rien.
-5. Tester Personnaliser et Réglages. Annuler le sélecteur de photo ne doit rien modifier.
-6. Vérifier le fond personnel et la lisibilité à distance.
+## Photo et accueil par défaut
 
-Après validation seulement : Personnaliser → Choisir l'accueil par défaut, si la TV offre cette page. Autre possibilité ADB, à exécuter volontairement après l'essai :
+La photo personnelle existante est conservée. Personnaliser → Choisir une photo utilise le sélecteur Android s'il est disponible. Une photo peut aussi être transférée dans `/sdcard/Android/data/com.mehdi.barcahome/files/background.jpg`, puis l'application doit être relancée. Le décodage est effectué hors du fil d'interface avec résolution limitée. Le ZIP ne contient pas la photo de l'utilisateur ; un fond architectural dessiné sert de secours.
 
-```powershell
-& "$env:USERPROFILE\TV-tools\platform-tools\adb.exe" -s 10.114.7.230:5555 shell cmd package set-home-activity --user 0 com.mehdi.barcahome/.HomeActivity
-```
+L'historique privé reste dans YouTube → Vous / Bibliothèque → Historique. Le lanceur ne peut pas l'extraire ni gérer un compte à la place de l'utilisateur.
 
-Sur certains firmwares Xiaomi, le choix du lanceur est limité ou la touche Home peut rouvrir l'accueil constructeur. Ne pas désactiver les lanceurs d'origine pour contourner cette restriction.
+Après vérification physique seulement : Personnaliser → Choisir l'accueil par défaut, si cette page est exposée par le firmware. Ne pas désactiver l'accueil Xiaomi pour contourner une restriction de la touche Home.
 
 ## Annulation
 
-Le script crée un dossier horodaté `sauvegarde-...` contenant `ANNULER.ps1`. Exécuter ce fichier depuis PowerShell : il restaure d'abord le composant d'accueil capturé puis désinstalle uniquement notre application (et sa copie de photo). Les sauvegardes et fichiers photo d'origine restent intacts. Les désactivations et réglages DNS précédemment effectués ont leur propre fichier d'annulation dans `TV-tools\nettoyage-...` ; ils ne sont pas modifiés par ce projet.
+Le dossier `sauvegarde-mitv-...` contient l'APK précédent et `ANNULER-MISE-A-JOUR.ps1`. Exécuter ce script restaure la version précédente sans effacer les données. Conserver le dossier complet. Les anciens réglages DNS et désactivations d'applications ne sont pas modifiés et disposent de leurs propres sauvegardes antérieures.
 
-## Compilation
+Pour une première installation, le script d'annulation de `Installer-Windows.ps1` restaure le composant d'accueil capturé puis désinstalle uniquement notre application. La clé et le versionCode 1 sont maintenus pendant ces essais pour permettre une réinstallation réversible ; le versionName courant est 1.3.
 
-Python 3, JDK 21 et SDK Android officiels : plateforme android-35 et build-tools 35.0.0. Depuis ce dossier :
+## Compiler et vérifier
+
+Python 3, JDK 21, SDK Android officiel : plateforme android-35 et build-tools 35.0.0.
 
 ```sh
 ANDROID_HOME=/workspace/android-sdk PATH=/chemin/vers/jdk/bin:$PATH python3 build.py
+javac --release 8 -d /tmp/barca-catalog-tests src/com/mehdi/barcahome/AppCatalog.java tests/AppCatalogTest.java
+java -cp /tmp/barca-catalog-tests AppCatalogTest
 ```
 
-Pas de Gradle ni bibliothèque tierce. La clé de développement est créée hors du projet dans `../.barca-home-signing/development.p12`. Elle sert aux essais, pas à la publication Play Store. Garder la même clé pour les futures mises à jour et ne pas la publier. Le build vérifie la signature et l'alignement de l'APK puis écrit SHA256.
+Aucune bibliothèque tierce ni Gradle. La clé de développement reste hors du dépôt dans `../.barca-home-signing/development.p12` et n'est pas publiée. La conserver pour les mises à jour. Le build nettoie les anciennes classes générées, vérifie signature/alignement et écrit SHA256. Cette signature est destinée aux essais locaux, pas à une publication Play Store.
 
-## Validation et limites
+Voir [VALIDATION.md](VALIDATION.md) pour les contrôles exécutés et leurs limites. La version 1.3 reste à tester sur une TV ; aucun émulateur n'a été utilisé.
 
-Consulter VALIDATION.md. La compilation ne garantit pas le comportement du firmware : test physique à réaliser avant de changer l'accueil par défaut. Aucun test sur votre TV n'est effectué depuis le cloud et aucune installation distante n'est prétendue.
+Versions précédentes : [Camp Nou 1.2](CAMP-NOU.md), [Barcelona 1.1](BARCELONA.md).
