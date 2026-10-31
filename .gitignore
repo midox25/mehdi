@@ -1,0 +1,4 @@
+build/
+*.apk
+*.p12
+sauvegarde-*/
